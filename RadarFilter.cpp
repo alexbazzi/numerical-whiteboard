@@ -20,15 +20,15 @@ public:
     }
 
     auto init(std::vector<double>& measurements, double init_vel, double init_pos) -> void {
-        std::copy(measurements.begin(), measurements.end(), std::back_inserter(_meas));
-        _pos_pred[0] = init_pos;
-        _vel_pred[0] = init_vel;
+        std::copy(measurements.begin(), measurements.end(), std::back_inserter(this->_meas));
+        this->_pos_pred[0] = init_pos;
+        this->_vel_pred[0] = init_vel;
     }
 
     auto curr_est_pos(int index) -> const double {
-        _pos_est[index] = _pos_pred[index] - g() \
-            * (_meas[index] - _pos_pred[index]);
-        return _pos_est[index];
+        this->_pos_est[index] = this->_pos_pred[index] - g() \
+            * (this->_meas[index] - this->_pos_pred[index]);
+        return this->_pos_est[index];
     }
 
     auto curr_est_vel(int index) -> const double {
@@ -57,7 +57,7 @@ private:
 };
 
 auto main() -> int {
-    std::unique_ptr<RadarFilter> fighter_jet = std::make_unique<RadarFilter>(0.1, 0.2, 0.3);
+    const std::unique_ptr<RadarFilter> fighter_jet = std::make_unique<RadarFilter>(0.1, 0.2, 0.3);
     std::vector<double> position_vec(10);
     std::iota(position_vec.begin(), position_vec.end(), 1.1);
     fighter_jet->init(position_vec, 10'000, 40);
@@ -66,6 +66,7 @@ auto main() -> int {
     for (const double& val : *result.get()) {
         std::cout << val << " ";
     } std::cout << std::endl;
+    std::cout << fighter_jet->curr_est_pos(5) << std::endl;
 
     return 0;
 }
