@@ -13,6 +13,8 @@ public:
         _vel_pred.resize(10, 0.0);
     }
 
+    RadarFilter() = delete;
+    RadarFilter(RadarFilter& other) = delete;
     ~RadarFilter() = default;
 
     auto next_est(int index) -> const double override {
