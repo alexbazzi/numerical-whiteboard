@@ -1,0 +1,23 @@
+#include "GHKFilter.hpp"
+
+GHKFilter::GHKFilter(double g, double h, double k)
+    : _g{g}, _h{h}, _k{k} {}
+
+GHKFilter::~GHKFilter() = default;
+
+auto GHKFilter::next_est(int index) -> const double {
+    return 0.0;
+}
+
+auto GHKFilter::curr_est(int index) -> const double {
+    return 0.0;
+}
+
+auto GHKFilter::extrapolate_state() -> const void {
+    return;
+}
+
+auto GHKFilter::update_state(double measurement) -> const void
+{}
+
+std::vector<double> GHKFilter::_estimates;

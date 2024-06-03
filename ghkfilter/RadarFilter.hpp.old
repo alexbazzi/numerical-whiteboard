@@ -1,0 +1,84 @@
+#include "GHKFilter.hpp"
+#include <memory>
+#include <numeric>
+
+#ifndef RADAR_FILTER_H
+#define RADAR_FILTER_H
+
+class RadarFilter : public GHKFilter {
+public:
+
+    /// @brief Default constructor
+    RadarFilter();
+
+    /// @brief  Constructs a RadarFilter using alpha, beta, and gamma
+    ///         parameters.
+    /// @param  g
+    /// @param  h
+    /// @param  k
+    RadarFilter(double g, double h, double k, double delta_t, size_t iterations);
+
+    /// @brief Copy constructor.
+    /// @param other 
+    RadarFilter(RadarFilter& other);
+
+    /// @brief Default destructor
+    virtual ~RadarFilter();
+
+    /// @brief Returns the next estimate
+    /// @param index 
+    /// @return 
+    auto next_est(int index) -> const double override; 
+
+    /// @brief Initialize the filter with initial conditions.
+    /// @param measurements 
+    /// @param init_vel 
+    /// @param init_pos 
+    /// @return 
+    auto init(std::vector<double>& measurements, double init_vel, double init_pos) -> void; 
+
+    /// @brief  The current position estimate for iteration "index".
+    /// @param  index 
+    /// @return estimate[index]
+    auto curr_est_pos() -> const double; 
+
+    /// @brief  The current position estimate for iteration "index".
+    /// @param  index 
+    /// @return estimate[index]
+    auto curr_est_vel() -> const double; 
+
+    /// @note try to use 
+    auto extrapolate_state() -> const void override; 
+
+    /// @brief Extrapolate position to the next iteration
+    /// @return   
+    auto extrap_pos() -> const void; 
+    auto extrap_vel() -> const void; 
+    auto update_state(double measurement) -> const void override;
+
+    auto print_pos_est() -> const void;
+    auto print_vel_est() -> const void;
+    auto print_pos_pred() -> const void;
+    auto print_vel_pred() -> const void;
+    auto print_all() -> const void;
+
+    static auto add_noise() -> const double;
+
+private:
+
+    /// @brief Time increment in seconds
+    double _delta_t;
+    
+    int _pred_idx;
+    int _est_idx;
+
+    /// @brief Estimates
+    std::vector<double> _pos_est;
+    std::vector<double> _vel_est;
+
+    /// @brief Predictions
+    std::vector<double> _pos_pred;
+    std::vector<double> _vel_pred;
+};
+
+#endif

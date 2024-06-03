@@ -1,0 +1,193 @@
+#include "GHKFilter.hpp"
+#include "RadarFilter.hpp"
+#include <memory>
+#include <numeric>
+#include <random>
+#include <iostream>
+
+
+RadarFilter::RadarFilter()
+    : GHKFilter(0.1, 0.1, 0.1),
+      _delta_t{0.1},
+      _est_idx{0},
+      _pred_idx{0}
+{}
+
+RadarFilter::RadarFilter(double g, 
+                         double h,
+                         double k,
+                         double delta_t,
+                         size_t iterations)
+    : GHKFilter::GHKFilter(g, h, k),
+      _delta_t{delta_t}
+{
+    // We consider the initial guess index 0
+    _pred_idx = 0;
+    _pos_est.resize(iterations, 0.0);
+    _vel_est.resize(iterations, 0.0);
+    _pos_pred.resize(iterations, 0.0);
+    _vel_pred.resize(iterations, 0.0);
+}
+
+RadarFilter::RadarFilter(RadarFilter& other)
+    : GHKFilter(other._g, other._h, other._k), 
+      _delta_t{other._delta_t} ,
+      _est_idx{other._est_idx},
+      _pred_idx{other._pred_idx}
+{}
+
+RadarFilter::~RadarFilter() = default;
+
+auto RadarFilter::next_est(int index) -> const double 
+{
+    return 0.0;
+}
+
+auto RadarFilter::init(std::vector<double>& measurements, double init_pos, double init_vel) -> void 
+{
+    std::copy(measurements.begin(), measurements.end(), std::back_inserter(this->_meas));
+    _pred_idx = 0;
+    _est_idx = 0;
+    this->_pos_est[0] = init_pos;
+    this->_vel_est[0] = init_vel;
+    this->_pos_pred[0] = init_pos;
+    this->_vel_pred[0] = init_vel;
+}
+
+auto RadarFilter::curr_est_pos() -> const double {
+    return _pos_est[_est_idx];
+}
+
+auto RadarFilter::curr_est_vel() -> const double {
+    return _vel_est[_est_idx];
+}
+
+auto RadarFilter::extrapolate_state() -> const void 
+{ 
+    if (_pred_idx < _pos_pred.size() - 1)
+    {
+        extrap_pos();
+        extrap_vel();
+        ++_pred_idx;
+    }
+}
+
+auto RadarFilter::extrap_pos() -> const void
+{
+    _pos_pred[_pred_idx + 1] = _pos_est[_pred_idx] + _delta_t * _vel_est[_pred_idx];
+}
+
+auto RadarFilter::extrap_vel() -> const void 
+{
+    _vel_pred[_pred_idx + 1] = _vel_est[_pred_idx];
+}
+
+auto RadarFilter::update_state(double measurement) -> const void
+{
+    _pos_est[_est_idx] = _pos_pred[_est_idx] + g() * \
+        (measurement - _pos_pred[_est_idx]);
+    _vel_est[_est_idx] = _vel_pred[_est_idx] + h() * \
+        (1/_delta_t) * (measurement - _pos_pred[_est_idx]);
+    ++_est_idx;
+    
+}
+
+auto RadarFilter::print_pos_est() -> const void
+{
+    std::cout << "Position estimates: ";
+    for (const double& pos : _pos_est)
+    {
+        std::cout << pos << " ";
+    } std::cout << "." <<  std::endl;
+}
+
+auto RadarFilter::print_vel_est() -> const void
+{
+    std::cout << "Velocity estimates: ";
+    for (const double& vel : _vel_est)
+    {
+        std::cout << vel << " ";
+    } std::cout << "." <<  std::endl;
+}
+
+auto RadarFilter::print_pos_pred() -> const void
+{
+    std::cout << "Position predictions: ";
+    for (const double& pos : _pos_pred)
+    {
+        std::cout << pos << " ";
+    } std::cout << "." <<  std::endl;
+}
+
+auto RadarFilter::print_vel_pred() -> const void
+{
+    std::cout << "Velocity predictions: ";
+    for (const double& vel : _vel_pred)
+    {
+        std::cout << vel << " ";
+    } std::cout << "." <<  std::endl;
+}
+
+auto RadarFilter::print_all() -> const void
+{
+    std::cout << "(pred_idx, est_idx): " << "(" << _pred_idx << ", " << _est_idx << ")" <<  std::endl;
+    print_pos_est();
+    print_vel_est();
+    print_pos_pred();
+    print_vel_pred();
+    std::cout << std::endl;
+}
+
+auto RadarFilter::add_noise() -> const double
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    std::uniform_int_distribution<> dis(-30, 30);
+
+    return dis(gen);
+}
+
+auto main() -> int {
+    // Instantiate filter
+    const std::unique_ptr<RadarFilter> fighter_jet = std::make_unique<RadarFilter>(0.2, 0.1, 0.1, 5.0, 10);
+
+    std::vector<double> position_vec(10);
+    int cum_pos = 30000;
+    for (double& position : position_vec) 
+    {
+        position += cum_pos;
+        cum_pos += 200.0 + RadarFilter::add_noise();
+    }
+
+    std::cout << "posvec:";
+    for (const double& val : position_vec) std::cout << val << " ";
+    
+    // Initialize filter with x_0 = 30000 and v_0 = 40
+    fighter_jet->init(position_vec, 30'000, 40);
+    
+    // Handle to vector measurements
+    //const std::unique_ptr<std::vector<double>> measurements = std::make_unique<std::vector<double>>(fighter_jet->meas());
+    std::vector<double> measurements = fighter_jet->meas();
+    
+    // Print vector of measurements
+    for (const double& val : measurements) {
+        std::cout << val << " ";
+    } std::cout << std::endl;
+    
+    // Print vector of velocities and positions
+    fighter_jet->print_all();
+
+    for (size_t i = 0; i < measurements.size(); i++)
+    {
+        fighter_jet->extrapolate_state();
+        fighter_jet->update_state(measurements[i]);
+        fighter_jet->print_all();
+        double pos_est = fighter_jet->curr_est_pos();
+        double vel_est = fighter_jet->curr_est_vel();
+        std::cout << "Time step " << i << ": Position estimate = " << std::fixed << pos_est
+                  << ", Velocity estimate = " << vel_est << std::endl;
+    }
+
+    return 0;
+}

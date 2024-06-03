@@ -1,26 +1,20 @@
 #include <iostream>
 #include <vector>
 
+#ifndef GHK_FILTER_H
+#define GHK_FILTER_H
+
 class GHKFilter {
 public:
 
-    GHKFilter(double g, double h, double k)
-        : _g{g}, _h{h}, _k{k} {}
-
-    ~GHKFilter() {}
+    GHKFilter(double g, double h, double k);
+    virtual ~GHKFilter();
     
-    virtual auto next_est(int index) -> const double {
-        return 0.0;
-    }
-    virtual auto curr_est(int index) -> const double {
-        return 0.0;
-    }
-    virtual auto extrapolate_state() -> const double {
-        return 0.0;
-    }
-    virtual auto update_state() -> const double {
-        return 0.0;
-    }
+    virtual auto next_est(int index) -> const double;
+    virtual auto curr_est(int index) -> const double;
+    virtual auto extrapolate_state() -> const void;
+    virtual auto update_state(double measurement) -> const void;
+
     auto g() -> const double { return _g; }
     auto h() -> const double { return _h; }
     auto k() -> const double { return _k; }
@@ -47,3 +41,5 @@ protected:
     /// @brief Current measurement
     std::vector<double> _meas;
 };
+
+#endif
