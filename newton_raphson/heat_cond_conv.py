@@ -55,7 +55,8 @@ else:
 print('Temperature distribution')
 print(T)
 plt.figure()
-plt.plot(x, T, label='Temperature Distribution')
+plt.plot(x, T, '--bo', label='Temperature Distribution')
+plt.grid(axis='both')
 plt.ylabel('Temperature')
 plt.xlabel('Distance')
 
